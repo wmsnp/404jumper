@@ -1,4 +1,5 @@
 use crate::AppState;
+use bevy::asset::embedded_asset;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -6,6 +7,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
+        embedded_asset!(app, "assets/litemoon.png");
         app.insert_resource(JumpTimer::default())
             .insert_resource(SpawnNextPlatform::default())
             .insert_resource(LastLandedPlatform::default())
@@ -96,7 +98,7 @@ fn setup_game(
         let player_y = platform_y + PLATFORM_SIZE.y / 2.0 + PLAYER_SIZE.y / 2.0;
         commands.spawn((
             Sprite {
-                image: asset_server.load("https://cdn.jsdelivr.net/gh/wmsnp/404jumper@main/assets/litemoon.png"),
+                image: asset_server.load("embedded://bevy_404jumper/assets/litemoon.png"),
                 custom_size: Some(PLAYER_SIZE),
                 ..default()
             },

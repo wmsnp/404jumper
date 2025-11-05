@@ -1,6 +1,5 @@
 mod game;
 mod menu;
-use bevy::asset::io::web::WebAssetPlugin;
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -12,17 +11,13 @@ pub enum AppState {
 
 fn main() {
     App::new()
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        canvas: Some("#bevy-canvas".into()),
-                        ..default()
-                    }),
-                    ..default()
-                })
-                .set(WebAssetPlugin { silence_startup_warning: true }),
-        )
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                canvas: Some("#bevy-canvas".into()),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_systems(Startup, setup_camera)
         .init_state::<AppState>()
         .add_plugins(game::GamePlugin)
