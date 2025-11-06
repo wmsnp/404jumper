@@ -171,20 +171,20 @@ fn respawn(
 }
 
 fn jump_input(
-    mouse_input: Res<ButtonInput<MouseButton>>, time: Res<Time>, windows: Query<&Window, With<PrimaryWindow>>, mut jump_timer: ResMut<JumpTimer>,
+    mouse_input: Res<ButtonInput<MouseButton>>, time: Res<Time>, windows: Query<&Window, With<PrimaryWindow>>, touches: Res<Touches>, mut jump_timer: ResMut<JumpTimer>,
     mut player_query: Query<(&mut Player, &mut Velocity, &Transform)>,
 ) {
     if let Ok((mut player, mut velocity, transform)) = player_query.single_mut() {
         if player.on_ground {
-            if mouse_input.just_pressed(MouseButton::Left) {
+            if mouse_input.just_pressed(MouseButton::Left) || touches.iter_just_pressed().next().is_some() {
                 jump_timer.pressed_time = 0.0;
             }
 
-            if mouse_input.pressed(MouseButton::Left) {
+            if mouse_input.pressed(MouseButton::Left) || !touches.iter().count() == 0 {
                 jump_timer.pressed_time += time.delta_secs();
             }
 
-            if mouse_input.just_released(MouseButton::Left) {
+            if mouse_input.just_released(MouseButton::Left) || touches.iter_just_released().next().is_some() {
                 if let Ok(window) = windows.single() {
                     if let Some(cursor_pos) = window.cursor_position() {
                         let window_size = Vec2::new(window.width(), window.height());

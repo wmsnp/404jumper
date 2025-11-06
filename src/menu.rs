@@ -50,8 +50,8 @@ fn setup_menu(mut commands: Commands) {
         });
 }
 
-fn menu_input(keyboard_input: Res<ButtonInput<KeyCode>>, mouse_input: Res<ButtonInput<MouseButton>>, mut next_state: ResMut<NextState<AppState>>) {
-    if keyboard_input.just_pressed(KeyCode::Enter) || keyboard_input.just_pressed(KeyCode::NumpadEnter) || mouse_input.just_pressed(MouseButton::Left) {
+fn menu_input(keyboard_input: Res<ButtonInput<KeyCode>>, mouse_input: Res<ButtonInput<MouseButton>>, touches: Res<Touches>, mut next_state: ResMut<NextState<AppState>>) {
+    if keyboard_input.just_pressed(KeyCode::Enter) || keyboard_input.just_pressed(KeyCode::NumpadEnter) || mouse_input.just_pressed(MouseButton::Left) || touches.just_pressed(0) {
         next_state.set(AppState::InGame);
     }
 }
