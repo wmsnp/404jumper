@@ -12,10 +12,7 @@ impl Plugin for GamePlugin {
             .insert_resource(SpawnNextPlatform::default())
             .insert_resource(LastLandedPlatform::default())
             .add_systems(OnEnter(AppState::InGame), setup_game)
-            .add_systems(
-                Update,
-                (jump_input, respawn, update_jump, update_height_display, spawn_platform, landing, camera_follow).run_if(in_state(AppState::InGame)),
-            )
+            .add_systems(Update, (jump, respawn, update_jump, update_height, spawn_platform, landing, camera).run_if(in_state(AppState::InGame)))
             .add_systems(OnExit(AppState::InGame), cleanup);
     }
 }
@@ -50,7 +47,7 @@ struct LastLandedPlatform {
 
 const PLAYER_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const PLATFORM_SIZE: Vec2 = Vec2::new(100.0, 20.0);
-fn update_height_display(player_query: Query<&Transform, With<Player>>, mut text_query: Query<&mut Text, With<HeightDisplay>>, windows: Query<&Window, With<PrimaryWindow>>) {
+fn update_height(player_query: Query<&Transform, With<Player>>, mut text_query: Query<&mut Text, With<HeightDisplay>>, windows: Query<&Window, With<PrimaryWindow>>) {
     if let Ok(player_transform) = player_query.single() {
         if let Ok(mut text) = text_query.single_mut() {
             if let Ok(window) = windows.single() {
@@ -63,7 +60,7 @@ fn update_height_display(player_query: Query<&Transform, With<Player>>, mut text
     }
 }
 
-fn camera_follow(player_query: Query<&Transform, With<Player>>, mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>, windows: Query<&Window, With<PrimaryWindow>>) {
+fn camera(player_query: Query<&Transform, With<Player>>, mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>, windows: Query<&Window, With<PrimaryWindow>>) {
     if let Ok(player_transform) = player_query.single() {
         if let Ok(mut camera_transform) = camera_query.single_mut() {
             if let Ok(window) = windows.single() {
@@ -170,30 +167,42 @@ fn respawn(
     }
 }
 
-fn jump_input(
+fn jump(
     mouse_input: Res<ButtonInput<MouseButton>>, time: Res<Time>, windows: Query<&Window, With<PrimaryWindow>>, touches: Res<Touches>, mut jump_timer: ResMut<JumpTimer>,
     mut player_query: Query<(&mut Player, &mut Velocity, &Transform)>,
 ) {
     if let Ok((mut player, mut velocity, transform)) = player_query.single_mut() {
         if player.on_ground {
-            if mouse_input.just_pressed(MouseButton::Left) || touches.iter_just_pressed().next().is_some() {
+            if mouse_input.just_pressed(MouseButton::Left) || touches.any_just_pressed() {
                 jump_timer.pressed_time = 0.0;
             }
-
-            if mouse_input.pressed(MouseButton::Left) || !touches.iter().count() == 0 {
+            if mouse_input.pressed(MouseButton::Left) || touches.iter().count() > 0 {
                 jump_timer.pressed_time += time.delta_secs();
             }
-
-            if mouse_input.just_released(MouseButton::Left) || touches.iter_just_released().next().is_some() {
+            let mut should_jump = false;
+            let mut target_x = transform.translation.x;
+            if mouse_input.just_released(MouseButton::Left) {
                 if let Ok(window) = windows.single() {
                     if let Some(cursor_pos) = window.cursor_position() {
                         let window_size = Vec2::new(window.width(), window.height());
-                        let cursor_world_x = cursor_pos.x - window_size.x / 2.0;
-                        velocity.0 = Vec3::new(cursor_world_x - transform.translation.x, jump_timer.pressed_time * 2000.0, 0.0);
-                        player.on_ground = false;
-                        jump_timer.pressed_time = 0.0;
+                        target_x = cursor_pos.x - window_size.x / 2.0;
+                        should_jump = true;
                     }
                 }
+            }
+            if touches.any_just_released() {
+                if let Some(touch) = touches.iter_just_released().next() {
+                    let touch_pos = touch.position();
+                    let window = windows.single().unwrap();
+                    let window_size = Vec2::new(window.width(), window.height());
+                    target_x = touch_pos.x - window_size.x / 2.0;
+                    should_jump = true;
+                }
+            }
+            if should_jump {
+                velocity.0 = Vec3::new(target_x - transform.translation.x, jump_timer.pressed_time * 2000.0, 0.0);
+                player.on_ground = false;
+                jump_timer.pressed_time = 0.0;
             }
         }
     }
